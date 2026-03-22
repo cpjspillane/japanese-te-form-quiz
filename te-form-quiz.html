@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>て Form Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=DM+Mono:wght@400;500&family=Shippori+Mincho:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1410;
+    --paper: #f5f0e8;
+    --paper2: #ede8db;
+    --red: #c0392b;
+    --green: #1a6644;
+    --gold: #b8860b;
+    --amber: #d97706;
+    --light-red: #fdf0ef;
+    --light-green: #edf7f2;
+    --light-gold: #fdf8ec;
+    --light-amber: #fff8ed;
+    --border: rgba(26,20,16,0.15);
+    --muted: #7a6e62;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(0,0,0,0.04) 28px);
+  }
+
+  .container { max-width: 520px; margin: 0 auto; }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 3px; left: 0; right: 0;
+    height: 1px;
+    background: var(--ink);
+  }
+  .header-jp {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 2.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .header-en {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .progress-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .progress-track {
+    flex: 1;
+    height: 4px;
+    background: var(--paper2);
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--ink);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .progress-label {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+
+  .score-chips {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .chip {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 0.06em;
+    border: 1px solid var(--border);
+    background: var(--paper2);
+    color: var(--muted);
+  }
+  .chip.c-perfect  { color: var(--green); border-color: var(--green);  background: var(--light-green); }
+  .chip.c-retry    { color: var(--amber); border-color: var(--amber);  background: var(--light-amber); }
+  .chip.c-hint     { color: var(--gold);  border-color: var(--gold);   background: var(--light-gold); }
+  .chip.c-missed   { color: var(--red);   border-color: var(--red);    background: var(--light-red); }
+
+  .card {
+    background: #fff;
+    border: 1.5px solid var(--ink);
+    border-radius: 3px;
+    padding: 2rem 1.75rem;
+    box-shadow: 4px 4px 0 var(--ink);
+    margin-bottom: 1rem;
+    position: relative;
+  }
+
+  .card-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .verb-prompt-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .hint-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 2px;
+    border: 1px solid var(--gold);
+    background: var(--light-gold);
+    color: var(--gold);
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .hint-btn:hover { opacity: 0.75; }
+  .hint-btn:disabled { opacity: 0.35; cursor: default; }
+
+  .verb-english {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+  }
+
+  .retry-badge {
+    display: inline-block;
+    background: var(--light-gold);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 2px;
+    margin-left: 8px;
+    vertical-align: middle;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .field-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  input[type="text"] {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.25rem;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    background: var(--paper);
+    color: var(--ink);
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  input[type="text"]:focus { border-color: var(--ink); }
+  input[type="text"].correct-input { border-color: var(--green); background: var(--light-green); color: var(--green); }
+  input[type="text"].wrong-input   { border-color: var(--red);   background: var(--light-red);   color: var(--red); }
+  input[type="text"].hint-filled   { border-color: var(--gold);  background: var(--light-gold);  color: var(--gold); }
+
+  .field-status { font-size: 16px; width: 20px; flex-shrink: 0; text-align: center; }
+
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border-radius: 2px;
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+    transition: all 0.1s;
+    background: var(--ink);
+    color: var(--paper);
+    width: 100%;
+    margin-top: 1.5rem;
+  }
+  .btn:hover  { opacity: 0.85; transform: translate(1px,1px); box-shadow: 2px 2px 0 var(--ink); }
+  .btn:active { transform: translate(2px,2px); box-shadow: none; }
+  .btn.outline {
+    background: transparent;
+    color: var(--ink);
+    margin-top: 0.75rem;
+  }
+
+  .feedback {
+    padding: 1rem 1.25rem;
+    border-radius: 2px;
+    border: 1.5px solid;
+    margin-top: 1.25rem;
+    font-size: 13px;
+    line-height: 1.6;
+    animation: fadeIn 0.2s ease;
+  }
+  .feedback.correct { border-color: var(--green); background: var(--light-green); color: var(--green); }
+  .feedback.wrong   { border-color: var(--red);   background: var(--light-red);   color: var(--red); }
+  .feedback .answer-line {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.05rem;
+    display: block;
+    margin-top: 4px;
+  }
+
+  .stamp {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 2.5px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+    opacity: 0;
+    transform: rotate(-12deg);
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .stamp.show { opacity: 1; }
+  .stamp.correct-stamp { border-color: var(--green); color: var(--green); }
+  .stamp.wrong-stamp   { border-color: var(--red);   color: var(--red); }
+
+  /* Done screen */
+  .done-screen { padding: 1rem 0 2rem; }
+  .done-jp {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 2.6rem; font-weight: 600;
+    margin-bottom: 0.25rem; letter-spacing: 0.1em;
+    text-align: center;
+  }
+  .done-sub { font-size: 12px; color: var(--muted); margin-bottom: 1.75rem; letter-spacing: 0.08em; text-align: center; }
+
+  .tally-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    border: 1.5px solid var(--ink);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .tally-cell {
+    padding: 1rem 0.75rem;
+    background: #fff;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .tally-cell:nth-child(odd) { border-right: 1px solid var(--border); }
+  .tally-num {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.9rem; font-weight: 600;
+    display: block; margin-bottom: 2px;
+  }
+  .tally-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .tally-sublabel { font-size: 9px; color: var(--muted); opacity: 0.7; margin-top: 1px; letter-spacing: 0.05em; }
+
+  /* History section */
+  .history-section {
+    margin-top: 1.5rem;
+  }
+  .history-title {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .history-clear {
+    font-size: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.05em;
+    padding: 0;
+  }
+  .history-clear:hover { color: var(--red); }
+  .history-rows { display: flex; flex-direction: column; gap: 6px; }
+  .history-row {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: auto 1fr repeat(4, auto);
+    gap: 0 10px;
+    align-items: center;
+  }
+  .h-date { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .h-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; gap: 1px; }
+  .h-seg { height: 100%; }
+  .h-seg.s-perfect { background: var(--green); }
+  .h-seg.s-retry   { background: var(--amber); }
+  .h-seg.s-hint    { background: var(--gold); }
+  .h-seg.s-missed  { background: var(--red); }
+  .h-num { font-size: 11px; font-weight: 600; }
+  .h-num.n-perfect { color: var(--green); }
+  .h-num.n-retry   { color: var(--amber); }
+  .h-num.n-hint    { color: var(--gold); }
+  .h-num.n-missed  { color: var(--red); }
+
+  .legend {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 10px; color: var(--muted); letter-spacing: 0.04em;
+  }
+  .legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .legend-dot.s-perfect { background: var(--green); }
+  .legend-dot.s-retry   { background: var(--amber); }
+  .legend-dot.s-hint    { background: var(--gold); }
+  .legend-dot.s-missed  { background: var(--red); }
+
+  .no-history { font-size: 12px; color: var(--muted); text-align: center; padding: 1rem 0; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-jp">て形</div>
+    <div class="header-en">て-form verb conjugation quiz</div>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+const VERBS = [
+  { en: "to eat",           dict: "たべる",   masu: "たべます",   te: "たべて"   },
+  { en: "to drink",         dict: "のむ",     masu: "のみます",   te: "のんで"   },
+  { en: "to write",         dict: "かく",     masu: "かきます",   te: "かいて"   },
+  { en: "to listen",        dict: "きく",     masu: "ききます",   te: "きいて"   },
+  { en: "to speak",         dict: "はなす",   masu: "はなします", te: "はなして" },
+  { en: "to go",            dict: "いく",     masu: "いきます",   te: "いって"   },
+  { en: "to come",          dict: "くる",     masu: "きます",     te: "きて"     },
+  { en: "to do",            dict: "する",     masu: "します",     te: "して"     },
+  { en: "to see / watch",   dict: "みる",     masu: "みます",     te: "みて"     },
+  { en: "to read",          dict: "よむ",     masu: "よみます",   te: "よんで"   },
+  { en: "to buy",           dict: "かう",     masu: "かいます",   te: "かって"   },
+  { en: "to wait",          dict: "まつ",     masu: "まちます",   te: "まって"   },
+  { en: "to return (home)", dict: "かえる",   masu: "かえります", te: "かえって" },
+  { en: "to get up",        dict: "おきる",   masu: "おきます",   te: "おきて"   },
+  { en: "to sleep",         dict: "ねる",     masu: "ねます",     te: "ねて"     },
+  { en: "to enter",         dict: "はいる",   masu: "はいります", te: "はいって" },
+  { en: "to swim",          dict: "およぐ",   masu: "およぎます", te: "およいで" },
+  { en: "to call",          dict: "よぶ",     masu: "よびます",   te: "よんで"   },
+  { en: "to understand",    dict: "わかる",   masu: "わかります", te: "わかって" },
+  { en: "to teach / show",  dict: "おしえる", masu: "おしえます", te: "おしえて" },
+];
+
+const TOTAL = 20;
+const STORAGE_KEY = 'teform_history';
+
+// Score tiers per card:
+//   "perfect" = correct first try, no hint
+//   "retry"   = correct on second try, no hint
+//   "hint"    = correct using hint (any attempt)
+//   "missed"  = wrong twice, pushed to retry queue
+
+let queue = [];
+let retryQueue = [];
+let current = null;
+let qNum = 0;
+let counts = { perfect: 0, retry: 0, hint: 0, missed: 0 };
+let attempts = 0;
+let hintUsed = false;
+let submitted = false;
+
+// ── Storage helpers ──────────────────────────────────────────────────────────
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveSession(counts) {
+  const history = loadHistory();
+  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  history.unshift({ date: today, ...counts });
+  if (history.length > 10) history.pop();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); } catch {}
+}
+
+function clearHistory() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  showDone(); // re-render without history
+}
+
+// ── Quiz logic ────────────────────────────────────────────────────────────────
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildQueue() {
+  queue = shuffle(VERBS).slice(0, TOTAL);
+  retryQueue = [];
+}
+
+function nextVerb() {
+  if (qNum < queue.length) {
+    current = { ...queue[qNum], isRetry: false };
+    qNum++;
+  } else if (retryQueue.length > 0) {
+    current = { ...retryQueue.shift(), isRetry: true };
+  } else {
+    showDone();
+    return;
+  }
+  attempts = 0;
+  hintUsed = false;
+  submitted = false;
+  renderQuiz();
+}
+
+function normalize(s) {
+  return s.trim().replace(/\s+/g, '');
+}
+
+function useHint() {
+  const inp = document.getElementById('inp-dict');
+  if (!inp || inp.readOnly) return;
+  inp.value = current.dict;
+  inp.className = 'hint-filled';
+  inp.readOnly = true;
+  hintUsed = true;
+  document.getElementById('hint-btn').disabled = true;
+  document.getElementById('inp-masu').focus();
+}
+
+function checkAnswers() {
+  if (submitted) return;
+
+  const dictInp = document.getElementById('inp-dict');
+  const masuInp = document.getElementById('inp-masu');
+  const teInp   = document.getElementById('inp-te');
+
+  const dictRaw = normalize(hintUsed ? current.dict : dictInp.value);
+  const masuRaw = normalize(masuInp.value);
+  const teRaw   = normalize(teInp.value);
+
+  // Require all fields filled
+  if ((!hintUsed && !normalize(dictInp.value)) || !masuRaw || !teRaw) {
+    if (!hintUsed && !normalize(dictInp.value)) dictInp.style.borderColor = '#e8a000';
+    if (!masuRaw) masuInp.style.borderColor = '#e8a000';
+    if (!teRaw)   teInp.style.borderColor   = '#e8a000';
+    return;
+  }
+
+  const dictOk = hintUsed || dictRaw === current.dict;
+  const masuOk = masuRaw === current.masu;
+  const teOk   = teRaw   === current.te;
+  const allOk  = dictOk && masuOk && teOk;
+
+  attempts++;
+
+  if (allOk) {
+    submitted = true;
+    // Determine tier
+    if (hintUsed)        counts.hint++;
+    else if (attempts === 1) counts.perfect++;
+    else                     counts.retry++;
+
+    styleField(dictInp, 'status-dict', dictOk, hintUsed);
+    styleField(masuInp, 'status-masu', masuOk, false);
+    styleField(teInp,   'status-te',   teOk,   false);
+    lockFields();
+    showFeedback('correct');
+
+  } else if (attempts === 1) {
+    // First wrong — flash red, clear wrong fields, allow retry
+    styleField(dictInp, 'status-dict', dictOk, hintUsed);
+    styleField(masuInp, 'status-masu', masuOk, false);
+    styleField(teInp,   'status-te',   teOk,   false);
+
+    setTimeout(() => {
+      if (!dictOk && !hintUsed) { dictInp.value = ''; dictInp.className = ''; }
+      if (!masuOk) { masuInp.value = ''; masuInp.className = ''; }
+      if (!teOk)   { teInp.value   = ''; teInp.className   = ''; }
+      if (!dictOk && !hintUsed) dictInp.focus();
+      else if (!masuOk)          masuInp.focus();
+      else                       teInp.focus();
+    }, 500);
+
+    showFeedback('try-again');
+
+  } else {
+    // Second wrong — show answers, push to END of retry queue
+    submitted = true;
+    counts.missed++;
+    styleField(dictInp, 'status-dict', dictOk, hintUsed);
+    styleField(masuInp, 'status-masu', masuOk, false);
+    styleField(teInp,   'status-te',   teOk,   false);
+    lockFields();
+    retryQueue.push({ ...current });   // goes to end of deck
+    showFeedback('wrong');
+  }
+}
+
+function styleField(inp, statusId, ok, wasHint) {
+  if (wasHint) { inp.className = 'hint-filled'; return; }
+  inp.className = ok ? 'correct-input' : 'wrong-input';
+  const s = document.getElementById(statusId);
+  if (s) s.textContent = ok ? '✓' : '✗';
+}
+
+function lockFields() {
+  ['inp-dict','inp-masu','inp-te'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.readOnly = true;
+  });
+  const hbtn = document.getElementById('hint-btn');
+  if (hbtn) hbtn.disabled = true;
+}
+
+function showFeedback(type) {
+  const fbDiv = document.getElementById('feedback');
+  const stamp = document.getElementById('stamp');
+  const btn   = document.getElementById('submit-btn');
+
+  fbDiv.style.display = 'block';
+
+  if (type === 'try-again') {
+    fbDiv.className = 'feedback wrong';
+    fbDiv.innerHTML = `<strong>Not quite</strong> — wrong fields cleared. One more try!`;
+    return;
+  }
+
+  const remaining = (queue.length - qNum) + retryQueue.length;
+  const isLast = remaining === 0;
+
+  if (type === 'correct') {
+    const tier = hintUsed ? 'hint' : (attempts === 1 ? 'perfect' : 'retry');
+    const msgs = {
+      perfect: `<strong>正解!</strong> Perfect — first try.`,
+      retry:   `<strong>正解!</strong> Correct on the second try.`,
+      hint:    `<strong>正解!</strong> Correct — with a hint.`,
+    };
+    fbDiv.className = 'feedback correct';
+    fbDiv.innerHTML = msgs[tier];
+    stamp.className = 'stamp correct-stamp show';
+    stamp.textContent = '正解';
+  } else {
+    fbDiv.className = 'feedback wrong';
+    fbDiv.innerHTML = `<strong>Incorrect.</strong> The correct answers are:
+      <span class="answer-line">Dictionary → <strong>${current.dict}</strong></span>
+      <span class="answer-line">ます form &nbsp;→ <strong>${current.masu}</strong></span>
+      <span class="answer-line">て form &nbsp;&nbsp;&nbsp;→ <strong>${current.te}</strong></span>
+      <br><small style="opacity:0.8">This verb will appear at the end of the deck.</small>`;
+    stamp.className = 'stamp wrong-stamp show';
+    stamp.textContent = '不正解';
+  }
+
+  btn.textContent = isLast ? 'See Results →' : 'Next Verb →';
+  btn.onclick = nextVerb;
+}
+
+// ── Render quiz card ──────────────────────────────────────────────────────────
+
+function renderQuiz() {
+  const pct = Math.min(100, Math.round((qNum - 1) / TOTAL * 100));
+  const totalSoFar = counts.perfect + counts.retry + counts.hint + counts.missed;
+
+  document.getElementById('app').innerHTML = `
+    <div class="progress-area">
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-label">${qNum} / ${TOTAL}${retryQueue.length > 0 ? ` +${retryQueue.length}` : ''}</div>
+    </div>
+    <div class="score-chips">
+      <div class="chip c-perfect">✓ ${counts.perfect} perfect</div>
+      <div class="chip c-retry">↺ ${counts.retry} retry</div>
+      <div class="chip c-hint">💡 ${counts.hint} hint</div>
+      <div class="chip c-missed">✗ ${counts.missed} missed</div>
+    </div>
+    <div class="card" id="quiz-card">
+      <div class="stamp" id="stamp"></div>
+
+      <div class="card-top-row">
+        <div class="verb-prompt-label">Conjugate this verb</div>
+        <button class="hint-btn" id="hint-btn" onclick="useHint()">💡 Hint</button>
+      </div>
+
+      <div class="verb-english">
+        ${current.en}${current.isRetry ? ' <span class="retry-badge">retry</span>' : ''}
+      </div>
+
+      <div class="field-group">
+        <div class="field">
+          <div class="field-label">Dictionary Form</div>
+          <div class="field-row">
+            <input type="text" id="inp-dict" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')checkAnswers()">
+            <div class="field-status" id="status-dict"></div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">ます Form</div>
+          <div class="field-row">
+            <input type="text" id="inp-masu" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')checkAnswers()">
+            <div class="field-status" id="status-masu"></div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">て Form</div>
+          <div class="field-row">
+            <input type="text" id="inp-te" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')checkAnswers()">
+            <div class="field-status" id="status-te"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="feedback" style="display:none" class="feedback"></div>
+      <button class="btn" id="submit-btn" onclick="checkAnswers()">Submit Answer</button>
+    </div>
+  `;
+  document.getElementById('inp-dict').focus();
+}
+
+// ── Done screen ───────────────────────────────────────────────────────────────
+
+function showDone() {
+  // Save to history only on first call (not on re-render from clearHistory)
+  if (typeof showDone._saved === 'undefined') {
+    showDone._saved = true;
+    saveSession(counts);
+  }
+
+  const total = counts.perfect + counts.retry + counts.hint + counts.missed;
+  const score = Math.round((counts.perfect + counts.retry * 0.6 + counts.hint * 0.4) / total * 100);
+  let grade, gradeJp;
+  if (score >= 85)      { grade = 'Excellent!';        gradeJp = '優秀'; }
+  else if (score >= 65) { grade = 'Good work';          gradeJp = 'よくできました'; }
+  else if (score >= 45) { grade = 'Keep practicing';    gradeJp = '練習を続けて'; }
+  else                  { grade = 'Review the て form'; gradeJp = '復習しましょう'; }
+
+  const history = loadHistory();
+
+  document.getElementById('app').innerHTML = `
+    <div class="done-screen">
+      <div class="done-jp">${gradeJp}</div>
+      <div class="done-sub">${grade}</div>
+
+      <div class="tally-grid">
+        <div class="tally-cell">
+          <span class="tally-num" style="color:var(--green)">${counts.perfect}</span>
+          <span class="tally-label">Perfect</span>
+          <div class="tally-sublabel">first try, no hint</div>
+        </div>
+        <div class="tally-cell">
+          <span class="tally-num" style="color:var(--amber)">${counts.retry}</span>
+          <span class="tally-label">Retry</span>
+          <div class="tally-sublabel">correct on 2nd try</div>
+        </div>
+        <div class="tally-cell">
+          <span class="tally-num" style="color:var(--gold)">${counts.hint}</span>
+          <span class="tally-label">Hint</span>
+          <div class="tally-sublabel">used the hint</div>
+        </div>
+        <div class="tally-cell">
+          <span class="tally-num" style="color:var(--red)">${counts.missed}</span>
+          <span class="tally-label">Missed</span>
+          <div class="tally-sublabel">wrong twice</div>
+        </div>
+      </div>
+
+      <div class="history-section">
+        <div class="history-title">
+          <span>Past sessions</span>
+          ${history.length > 0 ? `<button class="history-clear" onclick="clearHistory()">clear</button>` : ''}
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot s-perfect"></div>perfect</div>
+          <div class="legend-item"><div class="legend-dot s-retry"></div>retry</div>
+          <div class="legend-item"><div class="legend-dot s-hint"></div>hint</div>
+          <div class="legend-item"><div class="legend-dot s-missed"></div>missed</div>
+        </div>
+        ${history.length === 0
+          ? `<div class="no-history">No past sessions yet.</div>`
+          : `<div class="history-rows">${history.map(row => {
+              const t = (row.perfect||0)+(row.retry||0)+(row.hint||0)+(row.missed||0);
+              const w = n => t > 0 ? Math.max(2, Math.round(n/t*100)) : 0;
+              return `<div class="history-row">
+                <span class="h-date">${row.date}</span>
+                <div class="h-bar">
+                  ${row.perfect ? `<div class="h-seg s-perfect" style="flex:${row.perfect}"></div>` : ''}
+                  ${row.retry   ? `<div class="h-seg s-retry"   style="flex:${row.retry}"></div>` : ''}
+                  ${row.hint    ? `<div class="h-seg s-hint"    style="flex:${row.hint}"></div>` : ''}
+                  ${row.missed  ? `<div class="h-seg s-missed"  style="flex:${row.missed}"></div>` : ''}
+                </div>
+                <span class="h-num n-perfect">${row.perfect||0}</span>
+                <span class="h-num n-retry">${row.retry||0}</span>
+                <span class="h-num n-hint">${row.hint||0}</span>
+                <span class="h-num n-missed">${row.missed||0}</span>
+              </div>`;
+            }).join('')}</div>`
+        }
+      </div>
+
+      <button class="btn" style="margin-top:1.5rem" onclick="startQuiz()">Retake Quiz →</button>
+    </div>
+  `;
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+
+function startQuiz() {
+  qNum = 0;
+  counts = { perfect: 0, retry: 0, hint: 0, missed: 0 };
+  attempts = 0;
+  hintUsed = false;
+  submitted = false;
+  delete showDone._saved;
+  buildQueue();
+  nextVerb();
+}
+
+startQuiz();
+</script>
+</body>
+</html>
